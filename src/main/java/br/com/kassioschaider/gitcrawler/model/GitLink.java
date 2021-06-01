@@ -14,7 +14,7 @@ import java.util.List;
 @Getter @Setter
 public class GitLink {
 
-    private String type;
+    private GitType type;
     private URL url;
     private List<GitLink> links = new ArrayList();
 }

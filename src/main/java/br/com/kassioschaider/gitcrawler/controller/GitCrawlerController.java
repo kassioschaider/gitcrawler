@@ -1,7 +1,9 @@
 package br.com.kassioschaider.gitcrawler.controller;
 
+import br.com.kassioschaider.gitcrawler.model.DataGitFile;
 import br.com.kassioschaider.gitcrawler.model.GitLink;
 import br.com.kassioschaider.gitcrawler.model.GitRepository;
+import br.com.kassioschaider.gitcrawler.model.GitType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,55 +22,65 @@ import java.util.regex.Pattern;
 @RestController
 public class GitCrawlerController {
 
+    private static final String FILTER_TO_DIRECTORY_TYPE_LINK = "aria-label=\"Directory\"";
+    private static final String FILTER_TO_FILE_TYPE_LINK = "aria-label=\"File\"";
+    private static final String FILTER_TO_LINK_BY_TAG_CSS = "#repo-content-pjax-container";
+
     @PostMapping("/counter")
-    public List<GitLink> fileCounter(@RequestBody GitRepository gitRepository) {
+    public List<DataGitFile> fileCounter(@RequestBody GitRepository gitRepository) {
         List<GitLink> outputs = new ArrayList();
-        URL repositoryTest = null;
 
         try {
-            repositoryTest = new URL(gitRepository.getLinkRepository());
-            extractLinks(outputs, repositoryTest);
+            URL urlRepository = new URL(gitRepository.getLinkRepository());
+            extractLinks(outputs, urlRepository, gitRepository);
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
 
-        return outputs;
+        System.out.println(outputs);
+        return gitRepository.getDataGitFiles();
     }
 
-    private List<GitLink> extractLinks(List<GitLink> output, URL link) {
+    private List<GitLink> extractLinks(List<GitLink> output, URL nextLink, GitRepository gitRepository) {
         BufferedReader in;
 
         try {
-            InputStream urlObject = link.openStream();
+            InputStream urlObject = nextLink.openStream();
             in = new BufferedReader(new InputStreamReader(urlObject));
             String inputLine;
 
             while ((inputLine = in.readLine()) != null) {
                 GitLink gl;
 
-                if(this.filterInput(inputLine, "aria-label=\"Directory\"")) {
+                if(this.filterInput(inputLine, FILTER_TO_DIRECTORY_TYPE_LINK)) {
                     gl = new GitLink();
-                    gl.setType("Directory");
+                    gl.setType(GitType.DIRECTORY);
                     output.add(gl);
                 }
 
-                if(this.filterInput(inputLine, "aria-label=\"File\"")) {
+                if(this.filterInput(inputLine, FILTER_TO_FILE_TYPE_LINK)) {
                     gl = new GitLink();
-                    gl.setType("File");
+                    gl.setType(GitType.FILE);
                     output.add(gl);
                 }
 
-                if(this.filterInput(inputLine, "#repo-content-pjax-container")) {
+                if(this.filterInput(inputLine, FILTER_TO_LINK_BY_TAG_CSS)) {
                     final GitLink gitLink = output.get(output.size() - 1);
 
-                    gitLink.setUrl(new URL(this.getUrlByLine(inputLine)));
+                    final URL url = new URL(this.getUrlByLine(inputLine));
+                    gitLink.setUrl(url);
 
-                    if(gitLink.getType().equals("Directory")) {
+                    if(gitLink.getType().equals(GitType.DIRECTORY)) {
                         gitLink.setLinks(
                                 extractLinks(
                                         gitLink.getLinks(),
-                                        gitLink.getUrl())
+                                        gitLink.getUrl(),
+                                        gitRepository)
                         );
+                    }
+
+                    if(gitLink.getType().equals(GitType.FILE)) {
+                        gitRepository.getDataGitFiles().add(getDataGitFileByUrl(url, gitRepository));
                     }
                 }
             }
@@ -97,5 +109,12 @@ public class GitCrawlerController {
         }
 
         return result;
+    }
+
+    private DataGitFile getDataGitFileByUrl(URL url, GitRepository gitRepository) {
+
+        System.out.println(url.getFile());
+
+        return new DataGitFile("ew",1,1,4);
     }
 }
