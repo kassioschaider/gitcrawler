@@ -6,8 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -16,5 +16,5 @@ public class GitLink {
 
     private GitType type;
     private URL url;
-    private List<GitLink> links = new ArrayList();
+    private Set<GitLink> links = new HashSet<>();
 }

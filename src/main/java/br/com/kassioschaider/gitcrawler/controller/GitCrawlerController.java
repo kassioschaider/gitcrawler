@@ -12,23 +12,35 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @RestController
 public class GitCrawlerController {
 
-    private static final String FILTER_TO_DIRECTORY_TYPE_LINK = "aria-label=\"Directory\"";
-    private static final String FILTER_TO_FILE_TYPE_LINK = "aria-label=\"File\"";
+    private static final String BASE_URL = "https://github.com";
+    private static final String NO_EXTENSION = "no extension";
+    private static final String STRING_EMPTY = "";
+    private static final String DOT = ".";
+
+    private static final String FILTER_TO_DIRECTORY_TYPE_LINE = "aria-label=\"Directory\"";
+    private static final String FILTER_TO_FILE_TYPE_LINE = "aria-label=\"File\"";
     private static final String FILTER_TO_LINK_BY_TAG_CSS = "#repo-content-pjax-container";
+    private static final String FILTER_TO_END_OF_MAIN = "</main>";
+
+    private static final String PATTERN_TO_LINES_TYPE_LINE = "([0-9]+) (lines)";
+    private static final String PATTERN_TO_BYTES_TYPE_LINE = "([0-9]+\\.?[0-9]*?) (Bytes|Byte|KB)";
+    private static final String PATTERN_TO_URL_BY_HREF = "href=([\"'])(.*?)\\1";
+    private static final String PATTERN_TO_TYPE_FILE_BY_URL = "\\.[a-zA-Z]+$";
 
     @PostMapping("/counter")
-    public List<DataGitFile> fileCounter(@RequestBody GitRepository gitRepository) {
-        List<GitLink> outputs = new ArrayList();
+    public Set<DataGitFile> fileCounter(@RequestBody GitRepository gitRepository) {
+        Set<GitLink> outputs = new HashSet<>();
 
         try {
             URL urlRepository = new URL(gitRepository.getLinkRepository());
@@ -37,11 +49,10 @@ public class GitCrawlerController {
             e.printStackTrace();
         }
 
-        System.out.println(outputs);
         return gitRepository.getDataGitFiles();
     }
 
-    private List<GitLink> extractLinks(List<GitLink> output, URL nextLink, GitRepository gitRepository) {
+    private Set<GitLink> extractLinks(Set<GitLink> output, URL nextLink, GitRepository gitRepository) {
         BufferedReader in;
 
         try {
@@ -49,39 +60,40 @@ public class GitCrawlerController {
             in = new BufferedReader(new InputStreamReader(urlObject));
             String inputLine;
 
-            while ((inputLine = in.readLine()) != null) {
-                GitLink gl;
+            GitLink gl = new GitLink();
 
-                if(this.filterInput(inputLine, FILTER_TO_DIRECTORY_TYPE_LINK)) {
+            while ((inputLine = in.readLine()) != null) {
+
+                if(this.filterTypeLine(inputLine, FILTER_TO_DIRECTORY_TYPE_LINE)) {
                     gl = new GitLink();
                     gl.setType(GitType.DIRECTORY);
-                    output.add(gl);
                 }
 
-                if(this.filterInput(inputLine, FILTER_TO_FILE_TYPE_LINK)) {
+                if(this.filterTypeLine(inputLine, FILTER_TO_FILE_TYPE_LINE)) {
                     gl = new GitLink();
                     gl.setType(GitType.FILE);
-                    output.add(gl);
                 }
 
-                if(this.filterInput(inputLine, FILTER_TO_LINK_BY_TAG_CSS)) {
-                    final GitLink gitLink = output.get(output.size() - 1);
+                if(this.filterTypeLine(inputLine, FILTER_TO_LINK_BY_TAG_CSS)) {
+                    final URL url = new URL(
+                            BASE_URL + filterTextLineByPatternAndGroup(inputLine,
+                                    PATTERN_TO_URL_BY_HREF, 2));
+                    gl.setUrl(url);
 
-                    final URL url = new URL(this.getUrlByLine(inputLine));
-                    gitLink.setUrl(url);
-
-                    if(gitLink.getType().equals(GitType.DIRECTORY)) {
-                        gitLink.setLinks(
+                    if(gl.getType().equals(GitType.DIRECTORY)) {
+                        //gl.setLinks(
                                 extractLinks(
-                                        gitLink.getLinks(),
-                                        gitLink.getUrl(),
-                                        gitRepository)
-                        );
+                                        gl.getLinks(),
+                                        gl.getUrl(),
+                                        gitRepository);
+                        //);
                     }
 
-                    if(gitLink.getType().equals(GitType.FILE)) {
-                        gitRepository.getDataGitFiles().add(getDataGitFileByUrl(url, gitRepository));
+                    if(gl.getType().equals(GitType.FILE)) {
+                        getDataGitFileByUrl(url, gitRepository);
                     }
+
+                    output.add(gl);
                 }
             }
 
@@ -93,28 +105,90 @@ public class GitCrawlerController {
         return output;
     }
 
-    private Boolean filterInput(String line, String filter) {
+    private Boolean filterTypeLine(String line, String filter) {
         return line.contains(filter);
     }
 
-    private String getUrlByLine(String line) {
-        Pattern pattern = Pattern.compile("href=([\"'])(.*?)\\1");
+    private String filterTextLineByPattern(String line, String filter) {
+        Pattern pattern = Pattern.compile(filter);
         Matcher matcher = pattern.matcher(line);
-        String baseUrl = "https://github.com";
-        String result = "";
 
         if(matcher.find()) {
-            result = matcher.group();
-            result = result.replace("href=\"",baseUrl).replace("\"", "");
+            return matcher.group();
         }
 
-        return result;
+        return STRING_EMPTY;
     }
 
-    private DataGitFile getDataGitFileByUrl(URL url, GitRepository gitRepository) {
+    private String filterTextLineByPatternAndGroup(String line, String filter, int group) {
+        Pattern pattern = Pattern.compile(filter);
+        Matcher matcher = pattern.matcher(line);
+
+        if(matcher.find()) {
+            return matcher.group(group);
+        }
+
+        return STRING_EMPTY;
+    }
+
+    private void getDataGitFileByUrl(URL url, GitRepository gitRepository) throws IOException {
+        BufferedReader in;
+        DataGitFile dgt = new DataGitFile();
+        String extension = filterTextLineByPattern(url.getPath(), PATTERN_TO_TYPE_FILE_BY_URL)
+                .replace(DOT, STRING_EMPTY);
+
+        if (extension.equals(STRING_EMPTY)) {
+            dgt.setExtension(NO_EXTENSION);
+        } else {
+            dgt.setExtension(extension);
+        }
+
+        InputStream urlObject = url.openStream();
+        in = new BufferedReader(new InputStreamReader(urlObject));
+        String inputLine;
 
         System.out.println(url.getFile());
 
-        return new DataGitFile("ew",1,1,4);
+        while ((inputLine = in.readLine()) != null) {
+
+            final String s = filterTextLineByPatternAndGroup(inputLine, PATTERN_TO_LINES_TYPE_LINE, 1);
+            if (!s.equals(STRING_EMPTY)) {
+                System.out.println("Lines: " + s);
+                dgt.setLines(Integer.parseInt(filterTextLineByPatternAndGroup(inputLine,
+                        PATTERN_TO_LINES_TYPE_LINE,
+                        1)));
+            }
+            else {
+                final String s1 = filterTextLineByPatternAndGroup(inputLine, PATTERN_TO_BYTES_TYPE_LINE, 1);
+
+                if (!s1.equals(STRING_EMPTY)) {
+                    String s3 = filterTextLineByPatternAndGroup(inputLine, PATTERN_TO_BYTES_TYPE_LINE,2);
+                    System.out.println(s3);
+
+                    if(s3.equals("Bytes") || s3.equals("Byte")) {
+                        final BigDecimal bytes = new BigDecimal(filterTextLineByPatternAndGroup(inputLine,
+                                PATTERN_TO_BYTES_TYPE_LINE,
+                                1));
+                        System.out.println(bytes);
+                        dgt.setBytes(bytes);
+                    }
+
+                    if(s3.equals("KB")) {
+                        BigDecimal bg = new BigDecimal(filterTextLineByPatternAndGroup(inputLine,
+                                PATTERN_TO_BYTES_TYPE_LINE,
+                                1));
+                        final BigDecimal multiplicand = new BigDecimal("1024");
+                        System.out.println("Multi: " + multiplicand);
+                        final BigDecimal multiply = bg.multiply(multiplicand);
+                        System.out.println("Result: " + multiply);
+                        dgt.setBytes(multiply);
+                    }
+
+                    gitRepository.addDataGitFile(dgt);
+                }
+            }
+        }
+
+        in.close();
     }
 }
