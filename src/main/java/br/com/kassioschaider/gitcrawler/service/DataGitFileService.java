@@ -6,7 +6,7 @@ import br.com.kassioschaider.gitcrawler.model.GitRepository;
 import java.io.IOException;
 import java.net.URL;
 
-public interface DataGitService {
+public interface DataGitFileService {
 
-    DataGitFile getDataGitFileByUrl(URL url, GitRepository gitRepository);
+    DataGitFile getDataGitFileByUrl(URL url) throws IOException;
 }
