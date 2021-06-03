@@ -1,4 +1,4 @@
-package br.com.kassioschaider.gitcrawler.controller;
+package br.com.kassioschaider.gitcrawler.service.impl;
 
 import br.com.kassioschaider.gitcrawler.model.DataGitFile;
 import br.com.kassioschaider.gitcrawler.model.GitLink;
@@ -9,23 +9,18 @@ import br.com.kassioschaider.gitcrawler.service.GitCrawlerService;
 import br.com.kassioschaider.gitcrawler.util.ExtractDataUtil;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.math.BigDecimal;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashSet;
 import java.util.Set;
 
-@RestController
+@Service
 @AllArgsConstructor
-public class GitCrawlerController {
+public class GitCrawlerServiceImpl implements GitCrawlerService {
 
     private static final String BASE_URL = "https://github.com";
     private static final String FILTER_TO_DIRECTORY_TYPE_LINE = "aria-label=\"Directory\"";
@@ -37,39 +32,8 @@ public class GitCrawlerController {
     @Autowired
     private final DataGitFileService dataGitFileService;
 
-    @Autowired
-    private final GitCrawlerService gitCrawlerService;
-
-    @PostMapping("/counter")
-    public Set<DataGitFile> fileCounter(@RequestBody GitRepository gitRepository) {
-        Set<GitLink> links = new HashSet<>();
-        Set<DataGitFile> dataGitFiles = null;
-
-        try {
-            URL urlRepository = new URL(gitRepository.getLinkRepository());
-            dataGitFiles = gitCrawlerService.extractGitData(links, urlRepository, gitRepository);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-
-        return dataGitFiles;
-    }
-
-    @PostMapping("/tree")
-    public Set<GitLink> tree(@RequestBody GitRepository gitRepository) {
-        Set<GitLink> outputs = new HashSet<>();
-
-        try {
-            URL urlRepository = new URL(gitRepository.getLinkRepository());
-            extractLinks(outputs, urlRepository, gitRepository);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-
-        return outputs;
-    }
-
-    private void extractLinks(Set<GitLink> outputs, URL nextLink, GitRepository gitRepository) {
+    @Override
+    public Set<DataGitFile> extractGitData(Set<GitLink> outputs, URL nextLink, GitRepository gitRepository) {
         BufferedReader in;
 
         try {
@@ -96,7 +60,7 @@ public class GitCrawlerController {
                     gl.setUrl(url);
 
                     if(gl.getType().equals(GitType.DIRECTORY)) {
-                        extractLinks(gl.getLinks(), gl.getUrl(), gitRepository);
+                        extractGitData(gl.getLinks(), gl.getUrl(), gitRepository);
                     }
 
                     if(gl.getType().equals(GitType.FILE)) {
@@ -111,5 +75,12 @@ public class GitCrawlerController {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        return gitRepository.getDataGitFiles();
+    }
+
+    @Override
+    public Set<GitLink> extractTreeLinks(Set<GitLink> outputs, URL nextLink, GitRepository gitRepository) {
+        return null;
     }
 }
