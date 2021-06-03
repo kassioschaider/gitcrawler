@@ -1,37 +1,36 @@
-## Avaliação de Codificação Java com Spring
+## Java Coding Test with Spring
 
-### Descrição
+### Description
 
-API REST para extração de dados de repositório do GitHub.
+REST API to extract data from GitHub repository.
 
-O projeto foi desenvolvido usando Spring Boot 2.5.0 e Java 1.11 para uma API Rest.
+The project was developed using Spring Boot 2.5.0 and Java 1.11 for a Rest API.
 
-Foram utilizados do Spring Boot os módulos DevTools, Starter Web e Starter Test, além do Lombok e JUnit.
+Spring Boot's DevTools, Starter Web, and Starter Test modules were used, in addition to Lombok and JUnit.
 
-### Endpoint de dados da API
+### API Data Endpoint
 
-- Endereço: http://localhost:8080
+- Address: http://localhost:8080
 
-- A API REST possui o seguinte endpoint que recebe e responde no formato JSON, sendo que é utilizado um
-  ResponseEntity para gerar a resposta do endpoint.
+- The REST API has the following endpoint that receives and responds in JSON format, using a ResponseEntity to generate the endpoint's response:
 
-- `POST /counter`: O endpoint processa uma requisição de dados do GitHub,
-  no corpo da requisição deve conter o campo "linkRepository", contendo uma URL válida.
+- `POST /counter`: The endpoint processes the data request from GitHub,
+  The body of the request must contain the field "linkRepository" with a valid URL.
 
-### Arquitetura
+### Architecture
 
-O projeto a seguinte estrutura:
+The project has the following structure:
 
 - Packs:
-    - controller: o RestController da API.
-    - model: as classes de domínio da API, sendo que são utilizados as anotações do Lombok para gerar Getters, Setters, Constructors, Equals e HashCode.
-    - service: classes Services da API. Contém o pacote:
-        - impl: implementação dos métodos definidos nas interfaces Service e implementação da task da Thread de extração dos dados (DataGitFileTask.java).
-    - util: pacotes com as classes e interfaces de suporte a API.
+    - controller: the RestController of the API.
+    - model: the API's domain classes. Lombok annotations were used to generate Getters, Setters, Constructors, Equals and HashCode.
+    - service: Refers to the Services classes of the API. It contains the packages:
+        - impl: the implementation of the methods defined in the Service interfaces and implementation of the data extraction Thread (DataGitFileTask.java).
+    - util: API's support classes and interfaces.
 
-### Próximas Implementações
+### Upcoming Implementations
 
-- Implementar Kafka para Mensageria/Streams.
-- Implementar Threads para percorer o repositório GitHub.
-- Melhorar os filtros e regex.
-- Adicionar camada de persistência e cache.
+- Implement Kafka for Messaging/Streams.
+- Implement Threads to traverse the GitHub repository.
+- Improve filters and regex.
+- Add persistence layer and cache.
