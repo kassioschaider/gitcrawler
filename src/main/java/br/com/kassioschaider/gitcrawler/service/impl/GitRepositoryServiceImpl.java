@@ -5,7 +5,7 @@ import br.com.kassioschaider.gitcrawler.model.GitLink;
 import br.com.kassioschaider.gitcrawler.model.GitRepository;
 import br.com.kassioschaider.gitcrawler.model.GitType;
 import br.com.kassioschaider.gitcrawler.service.DataGitFileService;
-import br.com.kassioschaider.gitcrawler.service.GitCrawlerService;
+import br.com.kassioschaider.gitcrawler.service.GitRepositoryService;
 import br.com.kassioschaider.gitcrawler.util.ExtractDataUtil;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,7 @@ import java.util.Set;
 
 @Service
 @AllArgsConstructor
-public class GitCrawlerServiceImpl implements GitCrawlerService {
+public class GitRepositoryServiceImpl implements GitRepositoryService {
 
     private static final String BASE_URL = "https://github.com";
     private static final String FILTER_TO_DIRECTORY_TYPE_LINE = "aria-label=\"Directory\"";
@@ -33,7 +33,7 @@ public class GitCrawlerServiceImpl implements GitCrawlerService {
     private final DataGitFileService dataGitFileService;
 
     @Override
-    public Set<DataGitFile> extractGitData(Set<GitLink> outputs, URL nextLink, GitRepository gitRepository) {
+    public Set<DataGitFile> extractGitData(URL nextLink, GitRepository gitRepository) {
         BufferedReader in;
 
         try {
@@ -60,14 +60,12 @@ public class GitCrawlerServiceImpl implements GitCrawlerService {
                     gl.setUrl(url);
 
                     if(gl.getType().equals(GitType.DIRECTORY)) {
-                        extractGitData(gl.getLinks(), gl.getUrl(), gitRepository);
+                        extractGitData(gl.getUrl(), gitRepository);
                     }
 
                     if(gl.getType().equals(GitType.FILE)) {
                         gitRepository.addDataGitFile(dataGitFileService.getDataGitFileByUrl(url));
                     }
-
-                    outputs.add(gl);
                 }
             }
 
@@ -77,10 +75,5 @@ public class GitCrawlerServiceImpl implements GitCrawlerService {
         }
 
         return gitRepository.getDataGitFiles();
-    }
-
-    @Override
-    public Set<GitLink> extractTreeLinks(Set<GitLink> outputs, URL nextLink, GitRepository gitRepository) {
-        return null;
     }
 }

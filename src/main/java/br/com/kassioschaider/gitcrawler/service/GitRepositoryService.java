@@ -7,9 +7,7 @@ import br.com.kassioschaider.gitcrawler.model.GitRepository;
 import java.net.URL;
 import java.util.Set;
 
-public interface GitCrawlerService {
+public interface GitRepositoryService {
 
-    Set<DataGitFile> extractGitData(Set<GitLink> outputs, URL nextLink, GitRepository gitRepository);
-
-    Set<GitLink> extractTreeLinks(Set<GitLink> outputs, URL nextLink, GitRepository gitRepository);
+    Set<DataGitFile> extractGitData(URL nextLink, GitRepository gitRepository);
 }
