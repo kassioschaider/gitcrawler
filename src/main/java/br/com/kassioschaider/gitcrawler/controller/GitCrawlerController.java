@@ -5,6 +5,7 @@ import br.com.kassioschaider.gitcrawler.model.GitRepository;
 import br.com.kassioschaider.gitcrawler.service.GitRepositoryService;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,11 +18,12 @@ import java.util.Set;
 @AllArgsConstructor
 public class GitCrawlerController {
 
+    public static final int FIVE_SEC = 5000;
     @Autowired
     private final GitRepositoryService gitRepositoryService;
 
     @PostMapping("/counter")
-    public Set<DataGitFile> fileCounter(@RequestBody GitRepository gitRepository) {
+    public ResponseEntity<Set<DataGitFile>> fileCounter(@RequestBody GitRepository gitRepository) {
         Set<DataGitFile> dataGitFiles = null;
 
         try {
@@ -32,10 +34,11 @@ public class GitCrawlerController {
         }
 
         try {
-            Thread.sleep(5000);
+            Thread.sleep(FIVE_SEC);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        return dataGitFiles;
+
+        return ResponseEntity.ok(dataGitFiles);
     }
 }
