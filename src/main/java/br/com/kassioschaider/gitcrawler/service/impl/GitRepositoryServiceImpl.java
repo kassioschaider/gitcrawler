@@ -4,11 +4,9 @@ import br.com.kassioschaider.gitcrawler.model.DataGitFile;
 import br.com.kassioschaider.gitcrawler.model.GitLink;
 import br.com.kassioschaider.gitcrawler.model.GitRepository;
 import br.com.kassioschaider.gitcrawler.model.GitType;
-import br.com.kassioschaider.gitcrawler.service.DataGitFileService;
 import br.com.kassioschaider.gitcrawler.service.GitRepositoryService;
 import br.com.kassioschaider.gitcrawler.util.ExtractDataUtil;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -27,12 +25,9 @@ public class GitRepositoryServiceImpl implements GitRepositoryService {
     private static final String FILTER_TO_FILE_TYPE_LINE = "aria-label=\"File\"";
     private static final String FILTER_TO_LINK_BY_TAG_CSS = "#repo-content-pjax-container";
     private static final String REGEX_TO_URL_FROM_HREF_LINE = "href=([\"'])(.*?)\\1";
-    public static final int GROUP_URL = 2;
+    private static final int GROUP_URL = 2;
 
     private final ExtractDataUtil util = new ExtractDataUtil();
-
-    @Autowired
-    private final DataGitFileService dataGitFileService;
 
     @Override
     public Set<DataGitFile> extractGitData(URL nextLink, GitRepository gitRepository) {
@@ -41,30 +36,31 @@ public class GitRepositoryServiceImpl implements GitRepositoryService {
         try {
             InputStream urlObject = nextLink.openStream();
             in = new BufferedReader(new InputStreamReader(urlObject));
-            String inputLine;
+            try {
+                String inputLine;
+                GitLink gitLink = new GitLink();
 
-            GitLink gitLink = new GitLink();
+                while ((inputLine = in.readLine()) != null) {
 
-            while ((inputLine = in.readLine()) != null) {
+                    if (util.filterTypeLine(inputLine, FILTER_TO_DIRECTORY_TYPE_LINE)) {
+                        gitLink.setType(GitType.DIRECTORY);
+                        continue;
+                    }
 
-                if(util.filterTypeLine(inputLine, FILTER_TO_DIRECTORY_TYPE_LINE)) {
-                    gitLink.setType(GitType.DIRECTORY);
-                    continue;
+                    if (util.filterTypeLine(inputLine, FILTER_TO_FILE_TYPE_LINE)) {
+                        gitLink.setType(GitType.FILE);
+                        continue;
+                    }
+
+                    if (util.filterTypeLine(inputLine, FILTER_TO_LINK_BY_TAG_CSS)) {
+                        analyzeLink(gitRepository, inputLine, gitLink);
+                    }
                 }
-
-                if(util.filterTypeLine(inputLine, FILTER_TO_FILE_TYPE_LINE)) {
-                    gitLink.setType(GitType.FILE);
-                    continue;
-                }
-
-                if(util.filterTypeLine(inputLine, FILTER_TO_LINK_BY_TAG_CSS)) {
-                    analyzeLink(gitRepository, inputLine, gitLink);
-                }
+            } finally {
+                in.close();
             }
-
-            in.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
 
         return gitRepository.getDataGitFiles();
@@ -80,7 +76,12 @@ public class GitRepositoryServiceImpl implements GitRepositoryService {
         }
 
         if(gitLink.getType().equals(GitType.FILE)) {
-            gitRepository.addDataGitFile(dataGitFileService.getDataGitFileByUrl(url));
+            new Thread(new DataGitFileTask(url, gitRepository)).start();
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }
