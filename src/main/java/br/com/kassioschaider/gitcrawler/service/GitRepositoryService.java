@@ -8,5 +8,5 @@ import java.util.Set;
 
 public interface GitRepositoryService {
 
-    Set<DataGitFile> extractGitData(URL nextLink, GitRepository gitRepository);
+    Set<DataGitFile> extractGitData(URL nextLink, GitRepository gitRepository) throws InterruptedException;
 }

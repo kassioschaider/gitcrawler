@@ -31,7 +31,7 @@ public class GitRepositoryServiceImpl implements GitRepositoryService {
     private final ExtractDataUtil util = new ExtractDataUtil();
 
     @Override
-    public Set<DataGitFile> extractGitData(URL nextLink, GitRepository gitRepository) {
+    public Set<DataGitFile> extractGitData(URL nextLink, GitRepository gitRepository) throws InterruptedException {
         BufferedReader in;
 
         try {
@@ -67,7 +67,7 @@ public class GitRepositoryServiceImpl implements GitRepositoryService {
         return gitRepository.getDataGitFiles();
     }
 
-    private void analyzeLink(GitRepository gitRepository, String inputLine, GitLink gitLink) throws IOException {
+    private void analyzeLink(GitRepository gitRepository, String inputLine, GitLink gitLink) throws IOException, InterruptedException {
         final URL url = new URL(BASE_URL + util.filterTextLineByPatternAndGroup(inputLine,
                         REGEX_TO_URL_FROM_HREF_LINE, GROUP_URL));
         gitLink.setUrl(url);
@@ -78,11 +78,7 @@ public class GitRepositoryServiceImpl implements GitRepositoryService {
 
         if(gitLink.getType().equals(GitType.FILE)) {
             new Thread(new DataGitFileTask(url, gitRepository)).start();
-            try {
-                Thread.sleep(THREE_HUNDRED_MILLIS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            Thread.sleep(THREE_HUNDRED_MILLIS);
         }
     }
 }

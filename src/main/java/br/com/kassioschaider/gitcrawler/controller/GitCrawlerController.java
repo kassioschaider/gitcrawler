@@ -29,14 +29,11 @@ public class GitCrawlerController {
         try {
             URL urlRepository = new URL(gitRepository.getLinkRepository());
             dataGitFiles = gitRepositoryService.extractGitData(urlRepository, gitRepository);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-
-        try {
             Thread.sleep(FIVE_SEC);
+        } catch (MalformedURLException e) {
+            ResponseEntity.badRequest().body("Invalid link repository!");
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
 
         return ResponseEntity.ok(dataGitFiles);
