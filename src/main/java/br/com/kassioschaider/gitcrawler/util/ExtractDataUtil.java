@@ -14,17 +14,6 @@ public class ExtractDataUtil {
         return line.contains(filter);
     }
 
-    public String filterTextLineByPattern(String line, String filter) {
-        Pattern pattern = Pattern.compile(filter);
-        Matcher matcher = pattern.matcher(line);
-
-        if(matcher.find()) {
-            return matcher.group();
-        }
-
-        return STRING_EMPTY;
-    }
-
     public String filterTextLineByPatternAndGroup(String line, String filter, int group) {
         Pattern pattern = Pattern.compile(filter);
         Matcher matcher = pattern.matcher(line);

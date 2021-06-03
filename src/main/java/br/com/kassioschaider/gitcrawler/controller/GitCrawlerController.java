@@ -2,9 +2,7 @@ package br.com.kassioschaider.gitcrawler.controller;
 
 import br.com.kassioschaider.gitcrawler.model.DataGitFile;
 import br.com.kassioschaider.gitcrawler.model.GitRepository;
-import br.com.kassioschaider.gitcrawler.service.DataGitFileService;
 import br.com.kassioschaider.gitcrawler.service.GitRepositoryService;
-import br.com.kassioschaider.gitcrawler.util.ExtractDataUtil;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;

@@ -1,7 +1,6 @@
 package br.com.kassioschaider.gitcrawler.service;
 
 import br.com.kassioschaider.gitcrawler.model.DataGitFile;
-import br.com.kassioschaider.gitcrawler.model.GitLink;
 import br.com.kassioschaider.gitcrawler.model.GitRepository;
 
 import java.net.URL;

@@ -26,8 +26,8 @@ public class GitRepositoryServiceImpl implements GitRepositoryService {
     private static final String FILTER_TO_DIRECTORY_TYPE_LINE = "aria-label=\"Directory\"";
     private static final String FILTER_TO_FILE_TYPE_LINE = "aria-label=\"File\"";
     private static final String FILTER_TO_LINK_BY_TAG_CSS = "#repo-content-pjax-container";
-    private static final String PATTERN_TO_URL_BY_HREF = "href=([\"'])(.*?)\\1";
-    private final ExtractDataUtil edt = new ExtractDataUtil();
+    private static final String REGEX_TO_URL_FROM_HREF_LINE = "href=([\"'])(.*?)\\1";
+    private final ExtractDataUtil util = new ExtractDataUtil();
 
     @Autowired
     private final DataGitFileService dataGitFileService;
@@ -41,29 +41,29 @@ public class GitRepositoryServiceImpl implements GitRepositoryService {
             in = new BufferedReader(new InputStreamReader(urlObject));
             String inputLine;
 
-            GitLink gl = new GitLink();
+            GitLink gitLink = new GitLink();
 
             while ((inputLine = in.readLine()) != null) {
 
-                if(edt.filterTypeLine(inputLine, FILTER_TO_DIRECTORY_TYPE_LINE)) {
-                    gl.setType(GitType.DIRECTORY);
+                if(util.filterTypeLine(inputLine, FILTER_TO_DIRECTORY_TYPE_LINE)) {
+                    gitLink.setType(GitType.DIRECTORY);
                 }
 
-                if(edt.filterTypeLine(inputLine, FILTER_TO_FILE_TYPE_LINE)) {
-                    gl.setType(GitType.FILE);
+                if(util.filterTypeLine(inputLine, FILTER_TO_FILE_TYPE_LINE)) {
+                    gitLink.setType(GitType.FILE);
                 }
 
-                if(edt.filterTypeLine(inputLine, FILTER_TO_LINK_BY_TAG_CSS)) {
+                if(util.filterTypeLine(inputLine, FILTER_TO_LINK_BY_TAG_CSS)) {
                     final URL url = new URL(
-                            BASE_URL + edt.filterTextLineByPatternAndGroup(inputLine,
-                                    PATTERN_TO_URL_BY_HREF, 2));
-                    gl.setUrl(url);
+                            BASE_URL + util.filterTextLineByPatternAndGroup(inputLine,
+                                    REGEX_TO_URL_FROM_HREF_LINE, 2));
+                    gitLink.setUrl(url);
 
-                    if(gl.getType().equals(GitType.DIRECTORY)) {
-                        extractGitData(gl.getUrl(), gitRepository);
+                    if(gitLink.getType().equals(GitType.DIRECTORY)) {
+                        extractGitData(gitLink.getUrl(), gitRepository);
                     }
 
-                    if(gl.getType().equals(GitType.FILE)) {
+                    if(gitLink.getType().equals(GitType.FILE)) {
                         gitRepository.addDataGitFile(dataGitFileService.getDataGitFileByUrl(url));
                     }
                 }

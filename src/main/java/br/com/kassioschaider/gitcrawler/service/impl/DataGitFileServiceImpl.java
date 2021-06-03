@@ -1,7 +1,6 @@
 package br.com.kassioschaider.gitcrawler.service.impl;
 
 import br.com.kassioschaider.gitcrawler.model.DataGitFile;
-import br.com.kassioschaider.gitcrawler.model.GitRepository;
 import br.com.kassioschaider.gitcrawler.service.DataGitFileService;
 import br.com.kassioschaider.gitcrawler.util.ExtractDataUtil;
 import lombok.AllArgsConstructor;
@@ -19,76 +18,74 @@ import java.net.URL;
 public class DataGitFileServiceImpl implements DataGitFileService {
 
     private static final String NO_EXTENSION = "no extension";
-    private static final String DOT = ".";
     private static final String BYTES = "Bytes";
     private static final String BYTE = "Byte";
     private static final String KB = "KB";
-    private static final String MULTI_KB = "1024";
+    private static final String ZERO = "0";
+    private static final BigDecimal BIG_DECIMAL_MULTI_KB = new BigDecimal("1024");
 
-    private static final String PATTERN_TO_LINES_TYPE_LINE = "([0-9]+) (lines)";
-    private static final String PATTERN_TO_BYTES_TYPE_LINE = "([0-9]+\\.?[0-9]*?) (Bytes|Byte|KB)";
-    private static final String PATTERN_TO_TYPE_FILE_BY_URL = "\\.[a-zA-Z]+$";
+    private static final String REGEX_TO_LINES_FROM_LINE = "([0-9]+) (lines)";
+    private static final String REGEX_TO_BYTES_FROM_LINE = "([0-9]+\\.?[0-9]*?) ("+BYTES+"|"+BYTE+"|"+KB+")";
+    private static final String REGEX_TO_TYPE_FROM_URL = "(\\.)([a-zA-Z]+$)";
+    private static final int GROUP_EXTENSION = 2;
+    private static final int GROUP_MEASURE = 2;
+    private static final int GROUP_BYTES = 1;
+    private static final int GROUP_LINE = 1;
 
-    private final ExtractDataUtil edt = new ExtractDataUtil();
+    private final ExtractDataUtil util = new ExtractDataUtil();
 
     @Override
     public DataGitFile getDataGitFileByUrl(URL url) throws IOException {
-        BufferedReader in;
-        DataGitFile dgt = new DataGitFile();
-        String extension = edt.filterTextLineByPattern(url.getPath(), PATTERN_TO_TYPE_FILE_BY_URL)
-                .replace(DOT, ExtractDataUtil.STRING_EMPTY);
-
-        if (extension.equals(ExtractDataUtil.STRING_EMPTY)) {
-            dgt.setExtension(NO_EXTENSION);
-        } else {
-            dgt.setExtension(extension);
-        }
+        DataGitFile dataGitFile = new DataGitFile();
+        dataGitFile.setExtension(extractExtensionFromUrl(url));
 
         InputStream urlObject = url.openStream();
-        in = new BufferedReader(new InputStreamReader(urlObject));
-        String inputLine;
+        BufferedReader in = new BufferedReader(new InputStreamReader(urlObject));
+        String lineFile;
 
-        System.out.println(url.getFile());
-
-        while ((inputLine = in.readLine()) != null) {
-
-            final String s = edt.filterTextLineByPatternAndGroup(inputLine, PATTERN_TO_LINES_TYPE_LINE, 1);
-            if (!s.equals(ExtractDataUtil.STRING_EMPTY)) {
-                System.out.println("Lines: " + s);
-                dgt.setLines(Integer.parseInt(edt.filterTextLineByPatternAndGroup(inputLine,
-                        PATTERN_TO_LINES_TYPE_LINE,
-                        1)));
-            }
-            else {
-                final String s1 = edt.filterTextLineByPatternAndGroup(inputLine, PATTERN_TO_BYTES_TYPE_LINE, 1);
-
-                if (!s1.equals(ExtractDataUtil.STRING_EMPTY)) {
-                    String s3 = edt.filterTextLineByPatternAndGroup(inputLine, PATTERN_TO_BYTES_TYPE_LINE,2);
-                    System.out.println(s3);
-
-                    if(s3.equals(BYTES) || s3.equals(BYTE)) {
-                        final BigDecimal bytes = new BigDecimal(edt.filterTextLineByPatternAndGroup(inputLine,
-                                PATTERN_TO_BYTES_TYPE_LINE,
-                                1));
-                        System.out.println(bytes);
-                        dgt.setBytes(bytes);
-                    }
-
-                    if(s3.equals(KB)) {
-                        BigDecimal bg = new BigDecimal(edt.filterTextLineByPatternAndGroup(inputLine,
-                                PATTERN_TO_BYTES_TYPE_LINE,
-                                1));
-                        final BigDecimal multiplicand = new BigDecimal(MULTI_KB);
-                        System.out.println("Multi: " + multiplicand);
-                        final BigDecimal multiply = bg.multiply(multiplicand);
-                        System.out.println("Result: " + multiply);
-                        dgt.setBytes(multiply);
-                    }
-                }
-            }
+        while ((lineFile = in.readLine()) != null) {
+            searchAndExtractData(dataGitFile, lineFile);
         }
-
         in.close();
-        return dgt;
+
+        return dataGitFile;
+    }
+
+    private void searchAndExtractData(DataGitFile dataGitFile, String lineFile) {
+        extractLinesFromLine(dataGitFile, lineFile);
+        extractBytesFromLine(dataGitFile, lineFile);
+    }
+
+    private void extractLinesFromLine(DataGitFile dataGitFile, String lineFile) {
+        final String line = util.filterTextLineByPatternAndGroup(lineFile, REGEX_TO_LINES_FROM_LINE, GROUP_LINE);
+
+        if (!line.equals(ExtractDataUtil.STRING_EMPTY)) {
+            dataGitFile.setLines(Integer.parseInt(line));
+        }
+    }
+
+    private void extractBytesFromLine(DataGitFile dataGitFile, String lineFile) {
+        final String bytes = util.filterTextLineByPatternAndGroup(lineFile, REGEX_TO_BYTES_FROM_LINE, GROUP_BYTES);
+
+        if (!bytes.equals(ExtractDataUtil.STRING_EMPTY)) {
+            dataGitFile.setBytes(extractBytesFromLineByMeasure(lineFile, bytes));
+        }
+    }
+
+    private BigDecimal extractBytesFromLineByMeasure(String lineFile, String bytes) {
+        String measure = util.filterTextLineByPatternAndGroup(lineFile, REGEX_TO_BYTES_FROM_LINE, GROUP_MEASURE);
+
+        if(measure.equals(KB)) return (new BigDecimal(bytes)).multiply(BIG_DECIMAL_MULTI_KB);
+        if(measure.equals(BYTES) || measure.equals(BYTE)) return new BigDecimal(bytes);
+        return new BigDecimal(ZERO);
+    }
+
+    private String extractExtensionFromUrl(URL url) {
+        String extension = util.filterTextLineByPatternAndGroup(url.getPath(), REGEX_TO_TYPE_FROM_URL, GROUP_EXTENSION);
+
+        if (!extension.equals(ExtractDataUtil.STRING_EMPTY)) {
+            return extension;
+        }
+        return NO_EXTENSION;
     }
 }
