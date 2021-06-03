@@ -30,7 +30,7 @@ public class DataGitFileServiceImpl implements DataGitFileService {
     private static final int GROUP_EXTENSION = 2;
     private static final int GROUP_MEASURE = 2;
     private static final int GROUP_BYTES = 1;
-    private static final int GROUP_LINE = 1;
+    private static final int GROUP_LINES = 1;
 
     private final ExtractDataUtil util = new ExtractDataUtil();
 
@@ -57,7 +57,7 @@ public class DataGitFileServiceImpl implements DataGitFileService {
     }
 
     private void extractLinesFromLine(DataGitFile dataGitFile, String lineFile) {
-        final String line = util.filterTextLineByPatternAndGroup(lineFile, REGEX_TO_LINES_FROM_LINE, GROUP_LINE);
+        final String line = util.filterTextLineByPatternAndGroup(lineFile, REGEX_TO_LINES_FROM_LINE, GROUP_LINES);
 
         if (!line.equals(ExtractDataUtil.STRING_EMPTY)) {
             dataGitFile.setLines(Integer.parseInt(line));
