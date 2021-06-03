@@ -26,7 +26,7 @@ public class GitRepositoryServiceImpl implements GitRepositoryService {
     private static final String FILTER_TO_LINK_BY_TAG_CSS = "#repo-content-pjax-container";
     private static final String REGEX_TO_URL_FROM_HREF_LINE = "href=([\"'])(.*?)\\1";
     private static final int GROUP_URL = 2;
-    public static final int THREE_HUNDRED_MILLIS = 300;
+    private static final int THREE_HUNDRED_MILLIS = 300;
 
     private final ExtractDataUtil util = new ExtractDataUtil();
 
