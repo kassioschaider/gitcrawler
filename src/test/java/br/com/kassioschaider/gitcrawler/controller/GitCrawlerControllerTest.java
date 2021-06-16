@@ -40,7 +40,7 @@ public class GitCrawlerControllerTest {
     }
 
     @Test
-    public void testInvalidLinkRepository() throws Exception {
+    public void testInvalidLinkRepositoryMalformedUrl() throws Exception {
         URI uri = new URI("/counter");
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post(uri)
@@ -51,6 +51,21 @@ public class GitCrawlerControllerTest {
                 .andReturn();
 
         String content = mvcResult.getResponse().getContentAsString();
-        Assertions.assertEquals("Invalid link repository!", content);
+        Assertions.assertEquals("Invalid link repository! Malformed URL!", content);
+    }
+
+    @Test
+    public void testInvalidLinkRepositoryUnknownHost() throws Exception {
+        URI uri = new URI("/counter");
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post(uri)
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .content("{\"linkRepository\": \"https://githubhub.com/kassioschaider/price_stalker\"}"))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().is(400))
+                .andReturn();
+
+        String content = mvcResult.getResponse().getContentAsString();
+        Assertions.assertEquals("Invalid link repository! Unknown Host!", content);
     }
 }

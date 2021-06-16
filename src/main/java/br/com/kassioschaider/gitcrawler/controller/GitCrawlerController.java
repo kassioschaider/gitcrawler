@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -26,14 +27,20 @@ public class GitCrawlerController {
     @PostMapping("/counter")
     public ResponseEntity<?> fileCounter(@RequestBody GitRepository gitRepository) {
         Set<DataGitFile> dataGitFiles;
+        URL urlRepository;
 
         try {
-            URL urlRepository = new URL(gitRepository.getLinkRepository());
+            urlRepository = new URL(gitRepository.getLinkRepository());
+        } catch (MalformedURLException e) {
+            return ResponseEntity.badRequest().body("Invalid link repository! Malformed URL!");
+        }
+
+        try {
             dataGitFiles = gitRepositoryService.extractGitData(urlRepository, gitRepository);
             Thread.sleep(FIVE_SEC);
-        } catch (MalformedURLException e) {
-            return ResponseEntity.badRequest().body("Invalid link repository!");
-        } catch (InterruptedException e) {
+        } catch (UnknownHostException e) {
+            return ResponseEntity.badRequest().body("Invalid link repository! Unknown Host!");
+        } catch (InterruptedException | IOException e) {
             throw new RuntimeException(e);
         }
 

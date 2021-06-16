@@ -32,38 +32,34 @@ public class GitRepositoryServiceImpl implements GitRepositoryService {
     private final ExtractDataUtil util = new ExtractDataUtil();
 
     @Override
-    public Set<DataGitFile> extractGitData(URL nextLink, GitRepository gitRepository) throws InterruptedException {
+    public Set<DataGitFile> extractGitData(URL nextLink, GitRepository gitRepository) throws InterruptedException, IOException {
         BufferedReader in;
 
+        InputStream urlObject = nextLink.openStream();
+        in = new BufferedReader(new InputStreamReader(urlObject));
         try {
-            InputStream urlObject = nextLink.openStream();
-            in = new BufferedReader(new InputStreamReader(urlObject));
-            try {
-                String inputLine;
-                GitLink gitLink = new GitLink();
+            String inputLine;
+            GitLink gitLink = new GitLink();
 
-                while ((inputLine = in.readLine()) != null) {
+            while ((inputLine = in.readLine()) != null) {
 
-                    if (util.filterTypeLine(inputLine, FILTER_TO_DIRECTORY_TYPE_LINE)) {
-                        gitLink.setType(GitType.DIRECTORY);
-                        continue;
-                    }
-
-                    if (util.filterTypeLine(inputLine, FILTER_TO_FILE_TYPE_LINE)) {
-                        gitLink.setType(GitType.FILE);
-                        continue;
-                    }
-
-                    if (util.filterTypeLine(inputLine, FILTER_TO_LINK_BY_TAG_CSS)) {
-                        analyzeLink(gitRepository, inputLine, gitLink);
-                    }
+                if (util.filterTypeLine(inputLine, FILTER_TO_DIRECTORY_TYPE_LINE)) {
+                    gitLink.setType(GitType.DIRECTORY);
+                    continue;
                 }
-            } finally {
-                in.close();
-                urlObject.close();
+
+                if (util.filterTypeLine(inputLine, FILTER_TO_FILE_TYPE_LINE)) {
+                    gitLink.setType(GitType.FILE);
+                    continue;
+                }
+
+                if (util.filterTypeLine(inputLine, FILTER_TO_LINK_BY_TAG_CSS)) {
+                    analyzeLink(gitRepository, inputLine, gitLink);
+                }
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } finally {
+            in.close();
+            urlObject.close();
         }
 
         return gitRepository.getDataGitFiles();
