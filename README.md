@@ -21,6 +21,8 @@ Spring Boot's DevTools, Starter Web, and Starter Test modules were used, in addi
 
 The project has the following structure:
 
+Link to Swagger Hub: https://app.swaggerhub.com/apis-docs/kassioschaider/Trustly/1.0.0
+
 - Packs:
     - controller: the RestController of the API.
     - model: the API's domain classes. Lombok annotations were used to generate Getters, Setters, Constructors, Equals and HashCode.
