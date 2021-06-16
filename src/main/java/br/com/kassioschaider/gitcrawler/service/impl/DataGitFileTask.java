@@ -56,6 +56,8 @@ public class DataGitFileTask implements Runnable {
                 while ((lineFile = in.readLine()) != null) {
                     searchAndExtractData(dataGitFile, lineFile);
                 }
+
+                urlObject.close();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -72,17 +74,13 @@ public class DataGitFileTask implements Runnable {
     private void extractLinesFromLine(DataGitFile dataGitFile, String lineFile) {
         final String lines = util.filterTextLineByPatternAndGroup(lineFile, REGEX_TO_LINES_FROM_LINE, GROUP_LINES);
 
-        if (!lines.equals(ExtractDataUtil.STRING_EMPTY)) {
-            dataGitFile.setLines(Integer.parseInt(lines));
-        }
+        if (!lines.equals(ExtractDataUtil.STRING_EMPTY)) dataGitFile.setLines(Integer.parseInt(lines));
     }
 
     private void extractBytesFromLine(DataGitFile dataGitFile, String lineFile) {
         final String bytes = util.filterTextLineByPatternAndGroup(lineFile, REGEX_TO_BYTES_FROM_LINE, GROUP_BYTES);
 
-        if (!bytes.equals(ExtractDataUtil.STRING_EMPTY)) {
-            dataGitFile.setBytes(extractBytesFromLineByMeasure(lineFile, bytes));
-        }
+        if (!bytes.equals(ExtractDataUtil.STRING_EMPTY)) dataGitFile.setBytes(extractBytesFromLineByMeasure(lineFile, bytes));
     }
 
     private BigDecimal extractBytesFromLineByMeasure(String lineFile, String bytes) {
@@ -96,9 +94,8 @@ public class DataGitFileTask implements Runnable {
     private String extractExtensionFromUrl(URL url) {
         String extension = util.filterTextLineByPatternAndGroup(url.getPath(), REGEX_TO_TYPE_FROM_URL, GROUP_EXTENSION);
 
-        if (!extension.equals(ExtractDataUtil.STRING_EMPTY)) {
-            return extension;
-        }
+        if (!extension.equals(ExtractDataUtil.STRING_EMPTY)) return extension;
+
         return NO_EXTENSION;
     }
 

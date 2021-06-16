@@ -25,6 +25,7 @@ public class GitRepositoryServiceImpl implements GitRepositoryService {
     private static final String FILTER_TO_FILE_TYPE_LINE = "aria-label=\"File\"";
     private static final String FILTER_TO_LINK_BY_TAG_CSS = "#repo-content-pjax-container";
     private static final String REGEX_TO_URL_FROM_HREF_LINE = "href=([\"'])(.*?)\\1";
+
     private static final int GROUP_URL = 2;
     private static final int THREE_HUNDRED_MILLIS = 300;
 
@@ -59,6 +60,7 @@ public class GitRepositoryServiceImpl implements GitRepositoryService {
                 }
             } finally {
                 in.close();
+                urlObject.close();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
